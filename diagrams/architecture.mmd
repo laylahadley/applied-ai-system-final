@@ -1,0 +1,92 @@
+%% AI DJ - System Architecture
+%% Matches the code in src/ai_dj.py, src/guardrails.py, src/llm_client.py, src/recommender.py
+flowchart TD
+    %% ---------- INPUT ----------
+    U(["👤 User types a request<br/>e.g. 'chill lofi beats to study to'"])
+    CLI["CLI entry point<br/>python -m src.ai_dj"]
+    U --> CLI
+
+    %% ---------- STEP 1: INPUT GUARDRAIL ----------
+    G1{"Step 1: Input guardrail<br/>guardrails.validate_request<br/>empty? gibberish? over 300 chars?<br/>prompt injection?"}
+    CLI --> G1
+    BLOCK(["⛔ Request blocked<br/>friendly error shown"])
+    G1 -- "fails" --> BLOCK
+
+    %% ---------- STEP 2: UNDERSTAND ----------
+    subgraph UNDERSTAND["Step 2: Understand the request"]
+        P1["Gemini parser<br/>parse_request_llm<br/>returns JSON taste profile"]
+        P2["Offline keyword parser<br/>parse_request_offline<br/>fallback"]
+    end
+    G1 -- "passes" --> P1
+    P1 -- "no key / error / bad JSON" --> P2
+
+    %% ---------- GEMINI CLIENT ----------
+    LLM[["llm_client.ask_llm<br/>Google Gemini API<br/>retries 429/503 up to 4 times"]]
+    ENV[(".env file<br/>GEMINI_API_KEY")]
+    ENV -.-> LLM
+    P1 <-.-> LLM
+
+    %% ---------- STEP 3: PROFILE GUARDRAIL ----------
+    G2["Step 3: Profile guardrail<br/>guardrails.validate_profile<br/>clamp energy 0-1<br/>warn on unknown genre/mood"]
+    P1 -- "valid profile" --> G2
+    P2 --> G2
+
+    %% ---------- STEP 4: RETRIEVE (RAG) ----------
+    KB[("data/music_knowledge.json<br/>genre + mood notes<br/>related genres and moods")]
+    R["Step 4: Retriever<br/>retrieve_context"]
+    G2 --> R
+    KB --> R
+
+    %% ---------- STEP 5: RANK ----------
+    CSV[("data/songs.csv<br/>song catalog")]
+    RANK["Step 5: Ranker<br/>rank_songs<br/>original score_song<br/>+1.0 related genre<br/>+0.5 related mood"]
+    R -- "retrieved context" --> RANK
+    CSV --> RANK
+
+    %% ---------- STEP 6 + 7: GENERATE AND SELF-CHECK ----------
+    GEN["Step 6: DJ note writer<br/>generate_note_llm<br/>uses ONLY retrieved songs + notes"]
+    RANK -- "top 5 songs" --> GEN
+    GEN <-.-> LLM
+    G3{"Step 7: Output guardrail<br/>guardrails.check_dj_note<br/>every song named?<br/>no invented songs?"}
+    GEN --> G3
+    TPL["Offline template note<br/>template_note<br/>always safe"]
+    G3 -- "fails or no AI reply" --> TPL
+
+    %% ---------- STEP 8: CONFIDENCE ----------
+    CONF["Step 8: Confidence score<br/>guardrails.confidence_score<br/>top score / 4.5"]
+    G3 -- "passes" --> CONF
+    TPL --> CONF
+
+    %% ---------- OUTPUT ----------
+    OUT(["📻 Output to user<br/>parsed profile, warnings,<br/>top 5 songs with reasons,<br/>DJ note, confidence"])
+    CONF --> OUT
+
+    %% ---------- LOGGING ----------
+    LOG[("logs/ai_dj.log<br/>every step recorded")]
+    G1 -.-> LOG
+    G2 -.-> LOG
+    RANK -.-> LOG
+    G3 -.-> LOG
+    LLM -.-> LOG
+
+    %% ---------- HUMANS AND TESTING ----------
+    subgraph CHECKS["Human and automated checks"]
+        HUMAN["👤 User reviews picks<br/>reads reasons, warnings,<br/>and confidence score"]
+        DEV["👩‍💻 Developer reviews<br/>logs/ai_dj.log"]
+        TESTS["🧪 pytest<br/>tests/test_ai_dj.py<br/>fake Gemini replies,<br/>guardrail + consistency tests"]
+    end
+    OUT --> HUMAN
+    LOG --> DEV
+    TESTS -. "verifies" .-> G1
+    TESTS -. "verifies" .-> G3
+    TESTS -. "verifies" .-> RANK
+
+    %% ---------- STYLES ----------
+    classDef guard fill:#fde2e2,stroke:#c0392b,color:#000
+    classDef ai fill:#e3ecfd,stroke:#2b5cc0,color:#000
+    classDef data fill:#fff4d6,stroke:#b8860b,color:#000
+    classDef human fill:#e2f5e6,stroke:#2e8b57,color:#000
+    class G1,G2,G3,BLOCK guard
+    class P1,GEN,LLM ai
+    class KB,CSV,LOG,ENV data
+    class HUMAN,DEV,TESTS,U,OUT human
