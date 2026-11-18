@@ -80,3 +80,19 @@ def test_good_llm_note_passes(monkeypatch):
     monkeypatch.setattr(ai_dj, "ask_llm", fake_llm)
     result = ai_dj.run_pipeline("chill study music")
     assert result["note_source"].startswith("gemini")
+
+
+def test_evaluation_harness_runs_and_reports(tmp_path):
+    from src import evaluate
+
+    report = evaluate.run_evaluation(offline=True)
+    assert report["total"] == len(evaluate.TEST_CASES)
+    assert report["guard_passed"] == report["guard_total"]  # every bad input blocked
+    markdown = evaluate.to_markdown(report)
+    assert "| # | Test input |" in markdown
+
+    readme = tmp_path / "README.md"
+    readme.write_text("# Title\n\n## 🧭 Design Decisions\n", encoding="utf-8")
+    evaluate.update_readme(markdown, readme)
+    evaluate.update_readme(markdown, readme)  # running twice must not duplicate
+    assert readme.read_text(encoding="utf-8").count(evaluate.START_MARK) == 1
