@@ -1,0 +1,192 @@
+{
+  "genres": {
+    "pop": {
+      "description": "Catchy, polished, mainstream songs built around strong hooks and choruses.",
+      "keywords": ["pop", "mainstream", "top 40", "radio hits"],
+      "related": ["indie pop", "edm", "r&b"],
+      "typical_energy": 0.75
+    },
+    "indie pop": {
+      "description": "Pop with a handmade, quirky feel; bright melodies with lighter production.",
+      "keywords": ["indie pop", "indie"],
+      "related": ["pop", "folk", "synthwave"],
+      "typical_energy": 0.65
+    },
+    "lofi": {
+      "description": "Low-fidelity, mellow beats with soft drums and warm textures, popular for studying.",
+      "keywords": ["lofi", "lo-fi", "lo fi", "study beats"],
+      "related": ["ambient", "jazz", "hip hop"],
+      "typical_energy": 0.4
+    },
+    "ambient": {
+      "description": "Atmospheric, slow-moving soundscapes with little or no beat.",
+      "keywords": ["ambient", "atmospheric", "soundscape"],
+      "related": ["lofi", "classical"],
+      "typical_energy": 0.25
+    },
+    "jazz": {
+      "description": "Improvised, swinging music with rich chords, horns, and piano.",
+      "keywords": ["jazz", "saxophone", "swing"],
+      "related": ["blues", "lofi", "r&b"],
+      "typical_energy": 0.4
+    },
+    "rock": {
+      "description": "Guitar-driven music with live drums, from classic to hard rock.",
+      "keywords": ["rock", "guitar", "punk"],
+      "related": ["metal", "blues", "indie pop"],
+      "typical_energy": 0.8
+    },
+    "metal": {
+      "description": "Heavy, distorted guitars, fast drums, and aggressive vocals.",
+      "keywords": ["metal", "heavy metal", "headbang"],
+      "related": ["rock"],
+      "typical_energy": 0.95
+    },
+    "synthwave": {
+      "description": "Retro 1980s-inspired electronic music with synthesizers and neon nostalgia.",
+      "keywords": ["synthwave", "synth", "retro", "80s"],
+      "related": ["edm", "pop"],
+      "typical_energy": 0.7
+    },
+    "hip hop": {
+      "description": "Rhythmic vocals and rap over beats and samples.",
+      "keywords": ["hip hop", "hip-hop", "rap", "rapper"],
+      "related": ["r&b", "lofi"],
+      "typical_energy": 0.75
+    },
+    "r&b": {
+      "description": "Smooth, soulful vocals over groove-based rhythms.",
+      "keywords": ["r&b", "rnb", "r and b", "soul"],
+      "related": ["hip hop", "pop", "jazz"],
+      "typical_energy": 0.55
+    },
+    "country": {
+      "description": "Storytelling songs with acoustic and steel guitars and a rural feel.",
+      "keywords": ["country", "cowboy", "honky tonk"],
+      "related": ["folk", "blues"],
+      "typical_energy": 0.55
+    },
+    "folk": {
+      "description": "Acoustic, story-driven songs with simple arrangements.",
+      "keywords": ["folk", "acoustic", "singer songwriter"],
+      "related": ["country", "indie pop"],
+      "typical_energy": 0.35
+    },
+    "classical": {
+      "description": "Orchestral and solo instrumental music such as piano and strings.",
+      "keywords": ["classical", "orchestra", "orchestral", "piano", "symphony"],
+      "related": ["ambient"],
+      "typical_energy": 0.2
+    },
+    "edm": {
+      "description": "Electronic dance music built for clubs, with big drops and steady beats.",
+      "keywords": ["edm", "electronic", "house", "techno", "rave", "club"],
+      "related": ["synthwave", "pop"],
+      "typical_energy": 0.9
+    },
+    "reggae": {
+      "description": "Laid-back Jamaican rhythms with offbeat guitar and deep bass.",
+      "keywords": ["reggae", "island", "jamaican"],
+      "related": ["latin"],
+      "typical_energy": 0.5
+    },
+    "latin": {
+      "description": "Latin American styles such as reggaeton, salsa, and bachata.",
+      "keywords": ["latin", "reggaeton", "salsa", "bachata", "spanish"],
+      "related": ["reggae", "pop"],
+      "typical_energy": 0.75
+    },
+    "blues": {
+      "description": "Expressive, soulful music about hardship, built on blue notes and guitar.",
+      "keywords": ["blues", "bluesy"],
+      "related": ["jazz", "rock", "country"],
+      "typical_energy": 0.45
+    }
+  },
+  "moods": {
+    "happy": {
+      "description": "Bright, cheerful, feel-good songs.",
+      "keywords": ["happy", "upbeat", "cheerful", "sunny", "good mood", "feel good"],
+      "related": ["energetic", "confident", "romantic"],
+      "typical_energy": 0.75
+    },
+    "chill": {
+      "description": "Easygoing, low-pressure background music.",
+      "keywords": ["chill", "calm", "mellow", "laid back", "laid-back", "chilling"],
+      "related": ["relaxed", "peaceful", "focused"],
+      "typical_energy": 0.4
+    },
+    "relaxed": {
+      "description": "Comfortable, unwinding music for slowing down.",
+      "keywords": ["relax", "relaxed", "relaxing", "unwind", "lazy"],
+      "related": ["chill", "peaceful"],
+      "typical_energy": 0.4
+    },
+    "focused": {
+      "description": "Steady, unobtrusive music that helps concentration.",
+      "keywords": ["study", "studying", "focus", "focused", "coding", "homework", "concentrate", "work"],
+      "related": ["chill", "peaceful"],
+      "typical_energy": 0.4
+    },
+    "peaceful": {
+      "description": "Gentle, serene music for rest or reflection.",
+      "keywords": ["peaceful", "sleep", "sleeping", "meditate", "meditation", "serene", "bedtime"],
+      "related": ["relaxed", "chill"],
+      "typical_energy": 0.2
+    },
+    "intense": {
+      "description": "Driving, powerful music that pushes you forward.",
+      "keywords": ["intense", "gym", "workout", "pumped", "hype", "running", "lifting", "training"],
+      "related": ["energetic", "angry", "confident"],
+      "typical_energy": 0.9
+    },
+    "energetic": {
+      "description": "Fast, lively music made for moving and dancing.",
+      "keywords": ["energetic", "party", "dance", "dancing", "lit"],
+      "related": ["intense", "happy"],
+      "typical_energy": 0.85
+    },
+    "angry": {
+      "description": "Aggressive music for venting frustration.",
+      "keywords": ["angry", "rage", "mad", "furious", "aggressive"],
+      "related": ["intense"],
+      "typical_energy": 0.95
+    },
+    "sad": {
+      "description": "Emotional, downbeat songs about loss or heartbreak.",
+      "keywords": ["sad", "heartbreak", "heartbroken", "crying", "cry", "breakup", "lonely"],
+      "related": ["melancholic", "moody", "nostalgic"],
+      "typical_energy": 0.3
+    },
+    "melancholic": {
+      "description": "Bittersweet, reflective songs with a touch of sadness.",
+      "keywords": ["melancholic", "melancholy", "bittersweet", "rainy", "rain"],
+      "related": ["sad", "nostalgic", "moody"],
+      "typical_energy": 0.3
+    },
+    "moody": {
+      "description": "Dark, atmospheric music with tension.",
+      "keywords": ["moody", "dark", "night drive", "brooding"],
+      "related": ["melancholic", "intense"],
+      "typical_energy": 0.6
+    },
+    "nostalgic": {
+      "description": "Music that recalls the past and old memories.",
+      "keywords": ["nostalgic", "nostalgia", "throwback", "memories"],
+      "related": ["melancholic", "happy"],
+      "typical_energy": 0.5
+    },
+    "romantic": {
+      "description": "Warm, intimate songs about love.",
+      "keywords": ["romantic", "love", "date night", "date", "crush"],
+      "related": ["happy", "relaxed"],
+      "typical_energy": 0.5
+    },
+    "confident": {
+      "description": "Bold, swaggering music that boosts self-assurance.",
+      "keywords": ["confident", "confidence", "swagger", "boss"],
+      "related": ["intense", "happy"],
+      "typical_energy": 0.75
+    }
+  }
+}
