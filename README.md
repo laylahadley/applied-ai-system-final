@@ -321,3 +321,30 @@ applied-ai-system-final/
 ├── model_card.md                 # responsible-AI reflection
 └── requirements.txt
 ```
+---
+
+## 📜 Reproducible Execution Evidence
+
+Everything below can be regenerated with the commands shown; offline mode gives identical results on any machine.
+
+| Evidence | Command | Saved output |
+|---|---|---|
+| Full demo (3 requests + 1 blocked) | `python -m src.ai_dj --demo --offline` | [`assets/demo_output.txt`](assets/demo_output.txt) |
+| Evaluation run (12 cases) | `python -m src.evaluate` | [`assets/evaluation_output.txt`](assets/evaluation_output.txt) and [`evaluation_results.md`](evaluation_results.md) |
+| Automated tests | `python -m pytest -v` | [`assets/test_output.txt`](assets/test_output.txt) |
+
+Sample inputs and outputs are in **💬 Sample Interactions**, guardrail behavior is in **🛡️ Guardrail and Reliability Examples**, and pass/fail results are in **📊 Evaluation Results**.
+
+<!-- VIDEO-START -->
+**Video walkthrough:** _optional, not recorded_
+<!-- VIDEO-END -->
+
+---
+
+## 🎓 Portfolio
+
+**Code:** [github.com/laylahadley/applied-ai-system-final](https://github.com/laylahadley/applied-ai-system-final)
+
+**What this project says about me as an AI engineer:** I don't treat an AI model's output as the answer; I treat it as one input that has to be checked. In this project I took a simple rule-based recommender and added an LLM, but I kept the ranking transparent, grounded the AI in retrieved data, and wrapped every AI call in validation, retries, and a fallback. When the live Gemini service broke twice during development, the system kept working, and the logs told me exactly why. I care about building AI that is explainable, testable, and honest about how confident it is, and I measure that with real evaluations instead of assuming it works.
+
+A 5–7 minute presentation outline is in [`presentation.md`](presentation.md).

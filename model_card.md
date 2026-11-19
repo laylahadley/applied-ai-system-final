@@ -251,4 +251,64 @@ Prefs: genre=pop, mood=happy, energy=0.80
 
 **What surprised me:** I was surprised that something this simple, just adding up a few points, actually "feels" like a real recommendation. When I ran the 'Chill Lofi' profile, the top 3 were songs I might actuallly use to focus. It made me think that apps like Spotify might be doing something similar at the base level, just with much more data and features.
 
-**What I'd try next:** If I kept working on this, I'd want to add some collaborative filtering, like fake "listening history" for a few users so the system could recommend songs that similar users liked. I'd also want to try fuzzy matching for genres, and maybe build a simple interface where you can move a slider for energy and watch the recommendations change in real time.
+**What I'd try next:** If I kept working on this, I'd want to add some collaborative filtering, like fake "listening history" for a few users so the system could recommend songs that similar users liked. I'd also want to try fuzzy matching for genres, and maybe build a simple interface where you can move a slider for energy and watch the recommendations change in real time.---
+
+# Model Card Part 2: AI DJ (Project 4 Extension)
+
+This section covers the AI DJ system that extends the Module 3 recommender above. AI DJ takes a plain-English music request, uses Google Gemini (with an offline fallback) to turn it into a taste profile, retrieves genre and mood notes from `data/music_knowledge.json`, ranks the 20-song catalog, writes a grounded DJ note, and checks the result with guardrails and a confidence score.
+
+## Intended Use
+
+-  **For:** casual, low-stakes music discovery and as a teaching example of grounding an LLM with retrieval and guardrails.
+- **Not for:** real streaming platforms, large catalogs, or any decision that matters more than "what should I listen to next."
+
+## Limitations and Biases
+
+- **Tiny, uneven catalog.** There are only 20 songs, and most genres have one song. My evaluation showed this directly: for "romantic latin music for date night," the only latin song ("Fuego Lento") is tagged *playful*, not romantic, so the best match only reached 0.68 confidence. Users of well-covered genres (like lofi, with 3 songs) get better results than users of single-song genres.
+- **Hand-written knowledge base.** The "related genres and moods" that RAG retrieves are my own judgment (for example, I decided jazz is related to lofi). Someone with different musical taste or cultural background might group them differently, and the system would quietly inherit my opinions.
+- **Genre still dominates.** The original +2.0 genre weight is unchanged, so a right-genre, wrong-mood song can beat a song that perfectly matches mood and energy.
+- **Keyword parser gaps.** Without Gemini, the offline parser only understands words in its keyword lists. "Music for the gym" gets no genre, and "k-pop" is read as "pop" because the parser sees the word "pop."
+- **It always returns something.** Even for gibberish like "asdf qwerty zxcv," the system returns 5 songs. The low confidence score (0.33) and warnings flag this, but a user who ignores them could think those are real recommendations.
+- **The output guardrail checks facts, not tone.** It verifies that the AI names only real, recommended songs, but it does not check whether the note's wording is appropriate.
+- **AI-generated data.** Half the catalog was AI-generated in Module 3 and may carry stereotypes (for example, metal = angry, classical = peaceful).
+- **English only.**
+
+## Could It Be Misused, and How I Prevent It
+
+| Possible misuse | Prevention in this system |
+|---|---|
+| **Prompt injection:** a user tries to make Gemini ignore its instructions or reveal its prompt | The input guardrail blocks known injection phrases before any AI call. Gemini only ever returns a profile or a note, and both are validated before use. |
+| **Hallucinated or promoted songs:** the AI invents songs or names ones it shouldn't | The output guardrail rejects any note that mentions a song outside the recommended list and replaces it with a safe template. |
+| **Leaking the API key** | The key lives in `.env`, which is in `.gitignore`, so it never reaches GitHub. During development I accidentally pasted my key into an AI chat, so I deleted it and made a new one. That taught me keys should be treated like passwords. |
+| **Spamming requests to run up API usage** | Requests are limited to 300 characters, and retries stop after 4 attempts. A public version would also need per-user rate limits, which this project does not have. |
+| **Quietly biasing recommendations** (like "payola," where someone edits the knowledge base to push certain songs) | Every point in a score is printed as a reason, and every step is logged, so a manipulated ranking is visible and auditable. |
+
+## What Surprised Me While Testing Reliability
+
+- **The AI service itself changed under me.** The Gemini model I started with (`gemini-2.5-flash`) was retired, and the API returned a 404. Later, the new model returned a 503 because of high demand. I expected my own code to be the main source of bugs, but the external service was less reliable than my code. Because every AI call already had a fallback, the program never crashed; it just switched to offline mode and logged why.
+- **Logs found the bug, not guessing.** When Gemini wasn't working, the output just said "offline." The log file pointed to the exact cause each time: no key found, then a retired model, then server overload.
+- **The confidence score was more honest than the pass/fail checks.** All 12 evaluation cases passed, but confidence ranged from 0.33 to 1.00. The "romantic latin" case passed its check (the top pick was latin) yet showed medium confidence, because it really wasn't a perfect match. Passing a test and being a great answer are not the same thing.
+- **A small rule change fixed a real misunderstanding.** "Something sad and slow for a rainy night" was first read as *melancholic* (from "rainy") instead of *sad*, because the parser preferred longer keywords. Changing it to prefer the word mentioned first fixed it.
+
+## Collaboration With AI During This Project
+
+I used Claude as a coding assistant throughout this assignment. I described each phase of the assignment, shared my Module 3 core idea, and Claude proposed the design. I ran every command myself on my computer, reported the real output and errors back, and used those results to debug together. I used AI for:
+
+- **Design:** choosing to extend my recommender with RAG plus guardrails instead of replacing the scoring rule with an LLM.
+- **Code:** the pipeline, guardrails, Gemini client, evaluation script, and tests.
+- **Debugging:** reading my error messages and logs (the `.env` problem, the 404, and the 503) and proposing fixes.
+- **Documentation:** drafting the README and diagram, which I reviewed against my actual output.
+
+**A suggestion I accepted:** making every AI step have an offline fallback, so the system still works with no API key or when Gemini fails. I accepted it because it makes the project reproducible for anyone grading it, and it paid off when Gemini broke twice during development.
+
+**A suggestion I did not accept as written:** the AI's first choice of Gemini model, `gemini-2.5-flash`, turned out to be retired. I didn't keep it; I replaced it with `gemini-3.8-flash`, the model named in Google's own error message. Instead of hard-coding the next fix, we also made the model configurable through a `GEMINI_MODEL` setting in `.env`, so a future retirement needs no code change. A second example: when the AI proposed attaching my GitHub repository to read the code directly, I declined and pasted the relevant files myself instead, because I wanted control over what it could access.
+
+**What I learned about working with AI:** the AI's code was a very strong starting point, but it couldn't know things that only showed up when running on my machine, like Windows file quirks or a retired model or OneDrive access issues. The valuable part of the collab was the loop: run it, read the real output, report back, and fix. I learned to trust test results and logs over confident-sounding suggestions.
+
+## Future Improvements
+
+- A larger, real catalog with more songs per genre and mood, so coverage is fair across tastes.
+- Let users rate picks and use that feedback (a step toward collaborative filtering).
+- An output check for the note's tone, not just its facts.
+- Per-user rate limiting before any public deployment.
+- Treat a very low confidence score (below about 0.4) as "I'm not sure," and ask a clarifying question instead of returning songs.
