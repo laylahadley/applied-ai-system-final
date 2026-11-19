@@ -21,7 +21,7 @@ flowchart TD
     P1 -- "no key / error / bad JSON" --> P2
 
     %% ---------- GEMINI CLIENT ----------
-    LLM[["llm_client.ask_llm<br/>Google Gemini API<br/>retries 429/503 up to 4 times"]]
+    LLM[["llm_client.ask_llm<br/>Google Gemini API<br/>15s timeout per call<br/>retries 429/503 up to 3 times"]]
     ENV[(".env file<br/>GEMINI_API_KEY")]
     ENV -.-> LLM
     P1 <-.-> LLM

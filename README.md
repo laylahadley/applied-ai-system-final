@@ -45,7 +45,7 @@ Each request flows through an 8-step pipeline in `src/ai_dj.py`:
 7. **Output guardrail** (`guardrails.check_dj_note`): rejects the note if it skips a recommended song, mentions an unrecommended catalog song, or quotes a song that doesn't exist. A safe template note replaces it.
 8. **Confidence:** top score ÷ 4.5, labeled high (≥ 0.75), medium (≥ 0.5), or low.
 
-`src/llm_client.py` handles every Gemini call. It reads the key from `.env`, retries temporary errors (429/5xx) up to 4 times with increasing waits, and returns `None` on any failure so the pipeline falls back instead of crashing.
+`src/llm_client.py` handles every Gemini call. It reads the key from `.env`, retries temporary errors (429/5xx) up to 3 times with increasing waits, gives up on any call after 15 seconds, and skips Gemini for the rest of a run after a timeout, and returns `None` on any failure so the pipeline falls back instead of crashing.
 
 **Where humans and testing check the AI:** the user sees the parsed profile, every scoring reason, warnings, and a confidence score, so they can judge whether to trust the picks. The developer can audit `logs/ai_dj.log`. Automated `pytest` tests feed the pipeline fake Gemini replies (good and hallucinated) to prove the guardrails work.
 
@@ -231,7 +231,7 @@ Each row shows a real input, how the system behaved, and the result.
 | 5 | Gemini writes a note recommending `"Imaginary Banger"` (fake song, simulated in tests) | Output guardrail found a quoted title not in the catalog | AI note rejected and replaced with the safe template note; warning shown |
 | 6 | No API key found (real issue during development) | `llm_client` returned `None`; log recorded *"No GEMINI_API_KEY found"* | Pipeline ran fully in offline mode instead of crashing |
 | 7 | Gemini returned **404**: model `gemini-2.5-flash` retired (real issue during development) | Call failed safely and the error was logged with the exact reason | Offline fallback used; the log pointed directly to the fix (new model name) |
-| 8 | Gemini returned **503**: high demand (real issue during development) | Retry logic waited and tried again, up to 4 attempts | Temporary overloads now recover automatically; if all fail, offline fallback |
+| 8 | Gemini returned **503**: high demand (real issue during development) | Retry logic waited and tried again, up to 3 attempts; a 15-second timeout stops frozen calls | Temporary overloads now recover automatically; if all fail, offline fallback |
 
 ---
 
@@ -347,4 +347,3 @@ Sample inputs and outputs are in **💬 Sample Interactions**, guardrail behavio
 
 **What this project says about me as an AI engineer:** I don't treat an AI model's output as the answer; I treat it as one input that has to be checked. In this project I took a simple rule-based recommender and added an LLM, but I kept the ranking transparent, grounded the AI in retrieved data, and wrapped every AI call in validation, retries, and a fallback. When the live Gemini service broke twice during development, the system kept working, and the logs told me exactly why. I care about building AI that is explainable, testable, and honest about how confident it is, and I measure that with real evaluations instead of assuming it works.
 
-A 5–7 minute presentation outline is in [`presentation.md`](presentation.md).

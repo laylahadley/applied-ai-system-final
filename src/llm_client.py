@@ -6,15 +6,19 @@ function returns None so the rest of the system can fall back to offline mode.
 
 import logging
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger("ai_dj")
+_gemini_unreachable = False  # set True after a timeout so later calls skip Gemini
 
 DEFAULT_MODEL = "gemini-3.8-flash"
-MAX_ATTEMPTS = 4
-RETRY_WAIT_SECONDS = 3
+MAX_ATTEMPTS = 3
+RETRY_WAIT_SECONDS = 2
+CALL_TIMEOUT_SECONDS = 15   # give up on any single call after this long
+TOTAL_BUDGET_SECONDS = 25   # never spend longer than this on one request, retries included
 RETRYABLE_CODES = ("429", "500", "502", "503", "504", "UNAVAILABLE", "RESOURCE_EXHAUSTED")
 
 
@@ -70,19 +74,38 @@ def ask_llm(prompt: str) -> Optional[str]:
         logger.warning("google-genai is not installed; using offline mode.")
         return None
 
-    model = os.getenv("GEMINI_MODEL", "").strip() or _read_env_file("GEMINI_MODEL") or DEFAULT_MODEL
-    client = genai.Client(api_key=key)
+    global _gemini_unreachable
+    if _gemini_unreachable:
+        logger.info("Skipping Gemini: it timed out earlier in this run; using offline mode.")
+        return None
 
+    model = os.getenv("GEMINI_MODEL", "").strip() or _read_env_file("GEMINI_MODEL") or DEFAULT_MODEL
+    try:
+        client = genai.Client(api_key=key)
+    except Exception as exc:
+        logger.warning("Could not create Gemini client (%s); using offline mode.", exc)
+        return None
+
+    started = time.monotonic()
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
-            response = client.models.generate_content(model=model, contents=prompt)
+            response = _call_with_timeout(
+                lambda: client.models.generate_content(model=model, contents=prompt),
+                CALL_TIMEOUT_SECONDS,
+            )
             text = (response.text or "").strip()
             logger.info("LLM call succeeded (model=%s, attempt %d, %d chars).", model, attempt, len(text))
             return text or None
+        except TimeoutError:
+            _gemini_unreachable = True
+            logger.warning("LLM call timed out after %ds; skipping Gemini for the rest of this run.",
+                           CALL_TIMEOUT_SECONDS)
+            return None
         except Exception as exc:  # network errors, bad key, quota, overload, etc.
             temporary = any(code in str(exc) for code in RETRYABLE_CODES)
-            if temporary and attempt < MAX_ATTEMPTS:
-                wait = RETRY_WAIT_SECONDS * attempt
+            wait = RETRY_WAIT_SECONDS * attempt
+            within_budget = (time.monotonic() - started + wait) < TOTAL_BUDGET_SECONDS
+            if temporary and attempt < MAX_ATTEMPTS and within_budget:
                 logger.warning("LLM attempt %d failed (temporary: %s); retrying in %ds.",
                                attempt, str(exc)[:80], wait)
                 time.sleep(wait)
@@ -90,3 +113,26 @@ def ask_llm(prompt: str) -> Optional[str]:
             logger.warning("LLM call failed after %d attempt(s) (%s); using offline mode.", attempt, exc)
             return None
     return None
+
+
+def _call_with_timeout(func, seconds: float):
+    """Run func() in a background thread; raise TimeoutError if it takes too long.
+
+    A daemon thread is used so a stuck network call can never keep the program open.
+    """
+    box: dict = {}
+
+    def runner():
+        try:
+            box["value"] = func()
+        except Exception as exc:  # pass the error back to the caller
+            box["error"] = exc
+
+    worker = threading.Thread(target=runner, daemon=True)
+    worker.start()
+    worker.join(seconds)
+    if worker.is_alive():
+        raise TimeoutError(f"no reply within {seconds}s")
+    if "error" in box:
+        raise box["error"]
+    return box["value"]

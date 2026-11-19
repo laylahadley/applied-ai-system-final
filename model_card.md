@@ -280,7 +280,7 @@ This section covers the AI DJ system that extends the Module 3 recommender above
 | **Prompt injection:** a user tries to make Gemini ignore its instructions or reveal its prompt | The input guardrail blocks known injection phrases before any AI call. Gemini only ever returns a profile or a note, and both are validated before use. |
 | **Hallucinated or promoted songs:** the AI invents songs or names ones it shouldn't | The output guardrail rejects any note that mentions a song outside the recommended list and replaces it with a safe template. |
 | **Leaking the API key** | The key lives in `.env`, which is in `.gitignore`, so it never reaches GitHub. During development I accidentally pasted my key into an AI chat, so I deleted it and made a new one. That taught me keys should be treated like passwords. |
-| **Spamming requests to run up API usage** | Requests are limited to 300 characters, and retries stop after 4 attempts. A public version would also need per-user rate limits, which this project does not have. |
+| **Spamming requests to run up API usage** | Requests are limited to 300 characters, and retries stop after 3 attempts. A public version would also need per-user rate limits, which this project does not have. |
 | **Quietly biasing recommendations** (like "payola," where someone edits the knowledge base to push certain songs) | Every point in a score is printed as a reason, and every step is logged, so a manipulated ranking is visible and auditable. |
 
 ## What Surprised Me While Testing Reliability
